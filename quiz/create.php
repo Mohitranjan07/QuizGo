@@ -1,9 +1,4 @@
 <?php
-// DEBUG: Show raw API response
-if (isset($result['content'])) {
-    echo "<pre>Raw Response:\n" . htmlspecialchars($result['content']) . "</pre>";
-    exit;
-}
 /**
  * quiz/create.php - Create Quiz Page
  */
@@ -13,7 +8,7 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// TEMPORARY: Auto-login for testing (remove this later)
+// TEMPORARY: Auto-login for testing (remove later)
 if (!isset($_SESSION['user_id'])) {
     $_SESSION['user_id'] = 1;
     $_SESSION['user_name'] = 'Test User';
@@ -25,7 +20,7 @@ require_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/../includes/auth.php';
 require_once __DIR__ . '/../includes/generate_quiz.php';
 
-// Check if user is logged in
+// Check login
 if (!isLoggedIn()) {
     header('Location: ../login.php');
     exit();
@@ -33,28 +28,24 @@ if (!isLoggedIn()) {
 
 $error = null;
 $success = null;
-$generatedQuestions = null;
 
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $topic = trim($_POST['topic'] ?? '');
     $numQuestions = intval($_POST['num_questions'] ?? 5);
     $difficulty = $_POST['difficulty'] ?? 'medium';
-    
+
     if (empty($topic)) {
         $error = 'Please enter a topic.';
     } elseif ($numQuestions < 1 || $numQuestions > MAX_QUESTIONS) {
         $error = 'Please enter a valid number of questions (1-' . MAX_QUESTIONS . ').';
     } else {
-        // Generate quiz using the updated function
         $result = createQuiz($topic, $numQuestions, $difficulty, $_SESSION['user_id']);
-        
+
         if ($result['success']) {
-            $success = 'Quiz generated successfully!';
-            $generatedQuestions = $result['questions'];
             $_SESSION['quiz_id'] = $result['quiz_id'];
-            
-            // Redirect to quiz page
+            $_SESSION['quiz_questions'] = $result['questions'];
+            $_SESSION['quiz_topic'] = $topic;
             header('Location: take.php?quiz_id=' . $result['quiz_id']);
             exit();
         } else {
@@ -87,32 +78,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <a href="history.php">Quiz History</a>
         <a href="../logout.php">Logout</a>
     </div>
-    
+
     <h1>Create a New Quiz</h1>
-    
+
     <?php if ($error): ?>
         <div class="error"><?php echo htmlspecialchars($error); ?></div>
     <?php endif; ?>
-    
+
     <?php if ($success): ?>
         <div class="success"><?php echo htmlspecialchars($success); ?></div>
     <?php endif; ?>
-    
+
     <form method="POST" action="create.php">
         <div class="form-group">
             <label for="topic">Topic:</label>
-            <input type="text" id="topic" name="topic" required 
+            <input type="text" id="topic" name="topic" required
                    placeholder="e.g., PHP Programming" value="<?php echo $_POST['topic'] ?? ''; ?>">
         </div>
-        
+
         <div class="form-group">
             <label for="num_questions">Number of Questions:</label>
-            <input type="number" id="num_questions" name="num_questions" 
-                   min="<?php echo MIN_QUESTIONS; ?>" 
-                   max="<?php echo MAX_QUESTIONS; ?>" 
+            <input type="number" id="num_questions" name="num_questions"
+                   min="<?php echo MIN_QUESTIONS; ?>"
+                   max="<?php echo MAX_QUESTIONS; ?>"
                    value="5">
         </div>
-        
+
         <div class="form-group">
             <label for="difficulty">Difficulty:</label>
             <select id="difficulty" name="difficulty">
@@ -121,10 +112,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <option value="hard">Hard</option>
             </select>
         </div>
-        
+
         <button type="submit">Generate Quiz</button>
     </form>
-    
+
     <div class="api-info">
         Powered by: Gemini API (<?php echo GEMINI_MODEL ?? 'gemini-3.6-flash'; ?>)
     </div>
