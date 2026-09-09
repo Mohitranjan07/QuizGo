@@ -3,24 +3,20 @@
  * quiz/create.php - Create Quiz Page
  */
 
-// Start session
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// TEMPORARY: Auto-login for testing (remove later)
 if (!isset($_SESSION['user_id'])) {
     $_SESSION['user_id'] = 1;
     $_SESSION['user_name'] = 'Test User';
     $_SESSION['user_email'] = 'test@example.com';
 }
 
-// Include required files
 require_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/../includes/auth.php';
 require_once __DIR__ . '/../includes/generate_quiz.php';
 
-// Check login
 if (!isLoggedIn()) {
     header('Location: ../login.php');
     exit();
@@ -29,7 +25,6 @@ if (!isLoggedIn()) {
 $error = null;
 $success = null;
 
-// Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $topic = trim($_POST['topic'] ?? '');
     $numQuestions = intval($_POST['num_questions'] ?? 5);
@@ -55,72 +50,64 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 ?>
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Create Quiz</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        body { font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; }
-        .form-group { margin-bottom: 15px; }
-        label { display: block; font-weight: bold; margin-bottom: 5px; }
-        input, select { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
-        button { background: #4CAF50; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; }
-        button:hover { background: #45a049; }
-        .error { color: red; padding: 10px; background: #ffebee; border-radius: 4px; margin-bottom: 15px; }
-        .success { color: green; padding: 10px; background: #e8f5e9; border-radius: 4px; margin-bottom: 15px; }
-        .api-info { font-size: 12px; color: #666; margin-top: 20px; }
-        .nav { margin-bottom: 20px; }
-        .nav a { margin-right: 15px; color: #2196F3; text-decoration: none; }
-    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
     <?php include __DIR__ . '/../includes/navbar.php'; ?>
-    <div class="nav">
-        <a href="../dashboard.php">Dashboard</a>
-        <a href="history.php">Quiz History</a>
-        <a href="../logout.php">Logout</a>
+
+    <div class="container mt-4">
+        <div class="row justify-content-center">
+            <div class="col-lg-8 col-md-10">
+                <div class="card shadow">
+                    <div class="card-header bg-success text-white">
+                        <h4 class="mb-0"><i class="fas fa-pencil-alt"></i> Create a New Quiz</h4>
+                    </div>
+                    <div class="card-body">
+                        <?php if ($error): ?>
+                            <div class="alert alert-danger"><?php echo htmlspecialchars($error); ?></div>
+                        <?php endif; ?>
+                        <?php if ($success): ?>
+                            <div class="alert alert-success"><?php echo htmlspecialchars($success); ?></div>
+                        <?php endif; ?>
+
+                        <form method="POST" action="create.php">
+                            <div class="mb-3">
+                                <label for="topic" class="form-label">Topic</label>
+                                <input type="text" class="form-control" id="topic" name="topic" 
+                                       placeholder="e.g., PHP Programming" value="<?php echo $_POST['topic'] ?? ''; ?>" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="num_questions" class="form-label">Number of Questions</label>
+                                <input type="number" class="form-control" id="num_questions" name="num_questions" 
+                                       min="1" max="20" value="5">
+                            </div>
+                            <div class="mb-3">
+                                <label for="difficulty" class="form-label">Difficulty</label>
+                                <select class="form-select" id="difficulty" name="difficulty">
+                                    <option value="easy">Easy</option>
+                                    <option value="medium" selected>Medium</option>
+                                    <option value="hard">Hard</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-success w-100">
+                                <i class="fas fa-magic"></i> Generate Quiz
+                            </button>
+                        </form>
+                    </div>
+                    <div class="card-footer text-muted text-center">
+                        <small>Powered by Gemini API (<?php echo GEMINI_MODEL ?? 'gemini-3.6-flash'; ?>)</small>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <h1>Create a New Quiz</h1>
-
-    <?php if ($error): ?>
-        <div class="error"><?php echo htmlspecialchars($error); ?></div>
-    <?php endif; ?>
-
-    <?php if ($success): ?>
-        <div class="success"><?php echo htmlspecialchars($success); ?></div>
-    <?php endif; ?>
-
-    <form method="POST" action="create.php">
-        <div class="form-group">
-            <label for="topic">Topic:</label>
-            <input type="text" id="topic" name="topic" required
-                   placeholder="e.g., PHP Programming" value="<?php echo $_POST['topic'] ?? ''; ?>">
-        </div>
-
-        <div class="form-group">
-            <label for="num_questions">Number of Questions:</label>
-            <input type="number" id="num_questions" name="num_questions"
-                   min="<?php echo MIN_QUESTIONS; ?>"
-                   max="<?php echo MAX_QUESTIONS; ?>"
-                   value="5">
-        </div>
-
-        <div class="form-group">
-            <label for="difficulty">Difficulty:</label>
-            <select id="difficulty" name="difficulty">
-                <option value="easy">Easy</option>
-                <option value="medium" selected>Medium</option>
-                <option value="hard">Hard</option>
-            </select>
-        </div>
-
-        <button type="submit">Generate Quiz</button>
-    </form>
-
-    <div class="api-info">
-        Powered by: Gemini API (<?php echo GEMINI_MODEL ?? 'gemini-3.6-flash'; ?>)
-    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

@@ -1,18 +1,15 @@
 <?php
 /**
- * quiz/history.php - Quiz History (Database Version)
+ * quiz/history.php - Quiz History
  */
 
 require_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/../includes/auth.php';
 require_once __DIR__ . '/../config/database.php';
 
-// Require login
 requireLogin();
-
 $userId = getCurrentUserId();
 
-// Fetch user's quiz history
 try {
     $stmt = $pdo->prepare("
         SELECT r.*, q.topic, q.difficulty, q.num_questions 
@@ -29,66 +26,66 @@ try {
 }
 ?>
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Quiz History</title>
-    <style>
-        body { font-family: Arial, sans-serif; max-width: 900px; margin: 50px auto; padding: 20px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { padding: 10px; border: 1px solid #ddd; text-align: left; }
-        th { background: #4CAF50; color: white; }
-        .nav { margin-bottom: 20px; }
-        .nav a { margin-right: 15px; color: #2196F3; text-decoration: none; }
-        .btn { display: inline-block; padding: 8px 15px; background: #4CAF50; color: white; text-decoration: none; border-radius: 4px; }
-        .btn:hover { background: #45a049; }
-        .error { color: red; }
-        .empty { text-align: center; padding: 40px; color: #666; }
-    </style>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-    <div class="nav">
-        <a href="../dashboard.php">Dashboard</a>
-        <a href="create.php">Create Quiz</a>
-        <a href="../logout.php">Logout</a>
-    </div>
-    
-    <h1>📊 Quiz History</h1>
-    
-    <?php if (isset($error)): ?>
-        <p class="error"><?php echo htmlspecialchars($error); ?></p>
-    <?php endif; ?>
-    
-    <?php if (empty($history)): ?>
-        <div class="empty">
-            <p>You haven't taken any quizzes yet.</p>
-            <a href="create.php" class="btn">Create Your First Quiz</a>
+    <?php include __DIR__ . '/../includes/navbar.php'; ?>
+
+    <div class="container mt-4">
+        <div class="card shadow">
+            <div class="card-header bg-secondary text-white">
+                <h4 class="mb-0"><i class="fas fa-history"></i> Quiz History</h4>
+            </div>
+            <div class="card-body">
+                <?php if (isset($error)): ?>
+                    <div class="alert alert-danger"><?php echo htmlspecialchars($error); ?></div>
+                <?php endif; ?>
+                
+                <?php if (empty($history)): ?>
+                    <div class="alert alert-info">You haven't taken any quizzes yet.</div>
+                    <a href="create.php" class="btn btn-primary">Create Your First Quiz</a>
+                <?php else: ?>
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Topic</th>
+                                    <th>Difficulty</th>
+                                    <th>Score</th>
+                                    <th>Percentage</th>
+                                    <th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php $count = 1; foreach ($history as $row): ?>
+                                    <tr>
+                                        <td><?php echo $count++; ?></td>
+                                        <td><?php echo htmlspecialchars($row['topic']); ?></td>
+                                        <td>
+                                            <span class="badge bg-<?php echo $row['difficulty'] == 'easy' ? 'success' : ($row['difficulty'] == 'medium' ? 'warning' : 'danger'); ?>">
+                                                <?php echo ucfirst($row['difficulty']); ?>
+                                            </span>
+                                        </td>
+                                        <td><?php echo $row['score'] . '/' . $row['total']; ?></td>
+                                        <td><?php echo round($row['percentage'], 1); ?>%</td>
+                                        <td><?php echo date('M j, Y g:i A', strtotime($row['completed_at'])); ?></td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                <?php endif; ?>
+            </div>
         </div>
-    <?php else: ?>
-        <table>
-            <thead>
-                <tr>
-                    <th>#</th>
-                    <th>Topic</th>
-                    <th>Difficulty</th>
-                    <th>Score</th>
-                    <th>Percentage</th>
-                    <th>Date</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php $count = 1; ?>
-                <?php foreach ($history as $row): ?>
-                    <tr>
-                        <td><?php echo $count++; ?></td>
-                        <td><?php echo htmlspecialchars($row['topic']); ?></td>
-                        <td><?php echo ucfirst(htmlspecialchars($row['difficulty'])); ?></td>
-                        <td><?php echo $row['score'] . '/' . $row['total']; ?></td>
-                        <td><?php echo round($row['percentage'], 1); ?>%</td>
-                        <td><?php echo date('M j, Y g:i A', strtotime($row['completed_at'])); ?></td>
-                    </tr>
-                <?php endforeach; ?>
-            </tbody>
-        </table>
-    <?php endif; ?>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
