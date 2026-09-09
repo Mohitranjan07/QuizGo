@@ -5,18 +5,14 @@
 
 require_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/../config/api_helper.php';
-require_once __DIR__ . '/../config/database.php'; // <-- PDO connection
+require_once __DIR__ . '/../config/database.php';
 
-/**
- * Generate quiz questions using Gemini API
- */
 function generateQuizQuestions($topic, $numQuestions = 5, $difficulty = 'medium') {
     $prompt = "Create $numQuestions multiple choice questions about $topic.
 Return ONLY valid JSON. No markdown. No explanations.
 Use this EXACT format:
 {\"questions\":[{\"question\":\"Q1?\",\"options\":[\"A. 1\",\"B. 2\",\"C. 3\",\"D. 4\"],\"correct_answer\":\"A\"}]}";
 
-    // Retry up to 2 times with higher token limit
     $maxAttempts = 2;
     $attempt = 0;
     $content = '';
@@ -30,21 +26,16 @@ Use this EXACT format:
         }
 
         $content = trim($result['content']);
-
-        // Save raw for debugging
         file_put_contents(__DIR__ . '/../debug_response.txt', $content);
 
-        // Remove markdown
         $content = preg_replace('/```json\s*/i', '', $content);
         $content = preg_replace('/```\s*/', '', $content);
         $content = trim($content);
 
-        // Extract JSON
         if (preg_match('/\{[\s\S]*\}/', $content, $matches)) {
             $content = $matches[0];
         }
 
-        // Clean
         $content = preg_replace('/\n/', ' ', $content);
         $content = preg_replace('/\r/', ' ', $content);
         $content = preg_replace('/\t/', ' ', $content);
@@ -53,7 +44,6 @@ Use this EXACT format:
         $content = preg_replace('/,\s*}/', '}', $content);
         $content = preg_replace('/,\s*]/', ']', $content);
 
-        // Auto-complete missing brackets
         $openBraces = substr_count($content, '{');
         $closeBraces = substr_count($content, '}');
         $openBrackets = substr_count($content, '[');
@@ -71,12 +61,12 @@ Use this EXACT format:
         $quizData = json_decode($content, true);
 
         if (json_last_error() === JSON_ERROR_NONE && isset($quizData['questions'])) {
-            break; // Success
+            break;
         }
 
         $attempt++;
         if ($attempt < $maxAttempts) {
-            sleep(1); // Wait before retry
+            sleep(1);
         }
     }
 
@@ -95,20 +85,15 @@ Use this EXACT format:
     ];
 }
 
-/**
- * Create a quiz and save to database
- */
 function createQuiz($topic, $numQuestions = 5, $difficulty = 'medium', $userId = null) {
-    global $pdo; // Use database connection
+    global $pdo;
 
-    // Generate questions
     $result = generateQuizQuestions($topic, $numQuestions, $difficulty);
 
     if (!$result['success']) {
         return $result;
     }
 
-    // If no user ID, use session
     if (!$userId) {
         $userId = $_SESSION['user_id'] ?? null;
     }
@@ -118,23 +103,32 @@ function createQuiz($topic, $numQuestions = 5, $difficulty = 'medium', $userId =
     }
 
     try {
-        // Insert quiz into database
-        $stmt = $pdo->prepare("INSERT INTO quizzes (user_id, topic, difficulty, num_questions) VALUES (?, ?, ?, ?)");
+        // ✅ Insert into quizzes (matches your table)
+        $stmt = $pdo->prepare("INSERT INTO quizzes (user_id, topic, difficulty, total_questions) VALUES (?, ?, ?, ?)");
         $stmt->execute([$userId, $topic, $difficulty, $numQuestions]);
         $quizId = $pdo->lastInsertId();
 
-        // Insert questions
-        $stmt = $pdo->prepare("INSERT INTO questions (quiz_id, question, options, correct_answer) VALUES (?, ?, ?, ?)");
+        // ✅ Insert into questions (matches your table columns)
+        $stmt = $pdo->prepare("INSERT INTO questions (quiz_id, question_text, option_a, option_b, option_c, option_d, correct_answer) VALUES (?, ?, ?, ?, ?, ?, ?)");
+
         foreach ($result['questions'] as $q) {
+            $options = $q['options'];
+            $optionA = $options[0] ?? '';
+            $optionB = $options[1] ?? '';
+            $optionC = $options[2] ?? '';
+            $optionD = $options[3] ?? '';
+
             $stmt->execute([
                 $quizId,
                 $q['question'],
-                json_encode($q['options']),
+                $optionA,
+                $optionB,
+                $optionC,
+                $optionD,
                 $q['correct_answer']
             ]);
         }
 
-        // Store in session for immediate use
         if (session_status() === PHP_SESSION_NONE) {
             session_start();
         }
