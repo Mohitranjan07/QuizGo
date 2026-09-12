@@ -1,6 +1,6 @@
 <?php
 /**
- * quiz/history.php - Quiz History
+ * quiz/history.php - Quiz History with Category Filter
  */
 
 require_once __DIR__ . '/../config/config.php';
@@ -10,15 +10,26 @@ require_once __DIR__ . '/../config/database.php';
 requireLogin();
 $userId = getCurrentUserId();
 
-try {
-    $stmt = $pdo->prepare("
-        SELECT r.*, q.topic, q.difficulty, q.num_questions 
+// Get categories for filter
+$categories = $pdo->query("SELECT DISTINCT category FROM quizzes ORDER BY category")->fetchAll(PDO::FETCH_COLUMN);
+
+// Build query with optional category filter
+$sql = "SELECT r.*, q.topic, q.difficulty, q.category, q.total_questions 
         FROM results r 
         JOIN quizzes q ON r.quiz_id = q.id 
-        WHERE r.user_id = ? 
-        ORDER BY r.completed_at DESC
-    ");
-    $stmt->execute([$userId]);
+        WHERE r.user_id = ?";
+$params = [$userId];
+
+if (!empty($_GET['category'])) {
+    $sql .= " AND q.category = ?";
+    $params[] = $_GET['category'];
+}
+
+$sql .= " ORDER BY r.completed_at DESC";
+
+try {
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute($params);
     $history = $stmt->fetchAll();
 } catch (PDOException $e) {
     $error = 'Failed to fetch history: ' . $e->getMessage();
@@ -39,8 +50,18 @@ try {
 
     <div class="container mt-4">
         <div class="card shadow">
-            <div class="card-header bg-secondary text-white">
+            <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center">
                 <h4 class="mb-0"><i class="fas fa-history"></i> Quiz History</h4>
+                <form method="GET" class="d-flex">
+                    <select name="category" class="form-select form-select-sm me-2" onchange="this.form.submit()">
+                        <option value="">All Categories</option>
+                        <?php foreach ($categories as $cat): ?>
+                            <option value="<?= htmlspecialchars($cat) ?>" <?= (($_GET['category'] ?? '') == $cat) ? 'selected' : '' ?>>
+                                <?= htmlspecialchars($cat) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </form>
             </div>
             <div class="card-body">
                 <?php if (isset($error)): ?>
@@ -57,9 +78,11 @@ try {
                                 <tr>
                                     <th>#</th>
                                     <th>Topic</th>
+                                    <th>Category</th>
                                     <th>Difficulty</th>
                                     <th>Score</th>
                                     <th>Percentage</th>
+                                    <th>Time Taken</th>
                                     <th>Date</th>
                                 </tr>
                             </thead>
@@ -68,6 +91,7 @@ try {
                                     <tr>
                                         <td><?php echo $count++; ?></td>
                                         <td><?php echo htmlspecialchars($row['topic']); ?></td>
+                                        <td><?php echo htmlspecialchars($row['category']); ?></td>
                                         <td>
                                             <span class="badge bg-<?php echo $row['difficulty'] == 'easy' ? 'success' : ($row['difficulty'] == 'medium' ? 'warning' : 'danger'); ?>">
                                                 <?php echo ucfirst($row['difficulty']); ?>
@@ -75,6 +99,7 @@ try {
                                         </td>
                                         <td><?php echo $row['score'] . '/' . $row['total']; ?></td>
                                         <td><?php echo round($row['percentage'], 1); ?>%</td>
+                                        <td><?php echo gmdate("i:s", $row['time_taken']); ?></td>
                                         <td><?php echo date('M j, Y g:i A', strtotime($row['completed_at'])); ?></td>
                                     </tr>
                                 <?php endforeach; ?>
