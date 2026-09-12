@@ -15,6 +15,7 @@ if (!isLoggedIn()) {
 $userId = getCurrentUserId();
 $questions = $_SESSION['quiz_questions'] ?? [];
 $quizId = $_SESSION['quiz_id'] ?? null;
+$timeTaken = intval($_POST['time_taken'] ?? 0);
 
 if (empty($questions)) {
     header('Location: create.php');
@@ -62,14 +63,15 @@ $percentage = ($score / $total) * 100;
 // Save results to database
 try {
     if ($quizId) {
-        $stmt = $pdo->prepare("INSERT INTO results (user_id, quiz_id, score, total, percentage, answers) VALUES (?, ?, ?, ?, ?, ?)");
+        $stmt = $pdo->prepare("INSERT INTO results (user_id, quiz_id, score, total, percentage, answers, time_taken) VALUES (?, ?, ?, ?, ?, ?, ?)");
         $stmt->execute([
             $userId,
             $quizId,
             $score,
             $total,
             $percentage,
-            json_encode($answerData)
+            json_encode($answerData),
+            $timeTaken
         ]);
         $resultId = $pdo->lastInsertId();
         $_SESSION['result_id'] = $resultId;
@@ -83,6 +85,7 @@ $_SESSION['quiz_results'] = $results;
 $_SESSION['quiz_score'] = $score;
 $_SESSION['quiz_total'] = $total;
 $_SESSION['quiz_percentage'] = $percentage;
+$_SESSION['quiz_time_taken'] = $timeTaken;
 
 header('Location: result.php');
 exit();
