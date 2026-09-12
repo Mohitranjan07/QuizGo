@@ -8,8 +8,11 @@
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav ms-auto">
+                <li class="nav-item"><a class="nav-link" href="../dashboard.php"><i class="fas fa-dashboard"></i> Dashboard</a></li>
                 <li class="nav-item"><a class="nav-link" href="../quiz/create.php"><i class="fas fa-plus-circle"></i> Create Quiz</a></li>
                 <li class="nav-item"><a class="nav-link" href="../quiz/history.php"><i class="fas fa-history"></i> History</a></li>
+                <li class="nav-item"><a class="nav-link" href="../quiz/leaderboard.php"><i class="fas fa-trophy"></i> Leaderboard</a></li>
+                <li class="nav-item"><a class="nav-link" href="../profile.php"><i class="fas fa-user"></i> Profile</a></li>
                 <li class="nav-item"><a class="nav-link" href="../logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
             </ul>
         </div>
