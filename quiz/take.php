@@ -1,6 +1,6 @@
 <?php
 /**
- * quiz/take.php - Take Quiz Page
+ * quiz/take.php - Take Quiz Page with Timer
  */
 
 require_once __DIR__ . '/../config/config.php';
@@ -21,6 +21,7 @@ if (empty($questions)) {
 }
 
 $totalQuestions = count($questions);
+$timeLimit = 10; // minutes
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -38,17 +39,22 @@ $totalQuestions = count($questions);
         <div class="row justify-content-center">
             <div class="col-lg-8">
                 <div class="card shadow">
-                    <div class="card-header bg-info text-white">
+                    <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
                         <h4 class="mb-0"><i class="fas fa-question-circle"></i> Quiz: <?php echo htmlspecialchars($topic); ?></h4>
+                        <span class="badge bg-light text-dark fs-6">
+                            <i class="fas fa-clock"></i> <span id="timer">10:00</span>
+                        </span>
                     </div>
                     <div class="card-body">
                         <div class="alert alert-info">
                             <strong>Total Questions:</strong> <?php echo $totalQuestions; ?>
                             <br>
-                            <strong>Instructions:</strong> Answer all questions and click Submit.
+                            <strong>Instructions:</strong> Answer all questions and click Submit. Time limit: <?php echo $timeLimit; ?> minutes.
                         </div>
 
-                        <form method="POST" action="submit.php">
+                        <form method="POST" action="submit.php" id="quizForm">
+                            <input type="hidden" name="time_taken" id="time_taken" value="0">
+                            
                             <?php foreach ($questions as $index => $question): ?>
                                 <div class="card mb-3">
                                     <div class="card-header bg-light">
@@ -84,5 +90,33 @@ $totalQuestions = count($questions);
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+    const TIME_LIMIT = <?php echo $timeLimit; ?> * 60; // seconds
+    let timeLeft = TIME_LIMIT;
+    const timerElement = document.getElementById('timer');
+    const form = document.getElementById('quizForm');
+    const timeTakenInput = document.getElementById('time_taken');
+
+    function updateTimer() {
+        const minutes = Math.floor(timeLeft / 60);
+        const seconds = timeLeft % 60;
+        timerElement.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        
+        if (timeLeft <= 0) {
+            clearInterval(timerInterval);
+            alert('Time is up! Your quiz will be submitted automatically.');
+            form.submit();
+        }
+        timeLeft--;
+    }
+
+    const timerInterval = setInterval(updateTimer, 1000);
+    updateTimer();
+
+    form.addEventListener('submit', function() {
+        const timeTaken = TIME_LIMIT - timeLeft;
+        timeTakenInput.value = timeTaken;
+    });
+    </script>
 </body>
 </html>
