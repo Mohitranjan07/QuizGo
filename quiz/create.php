@@ -29,13 +29,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $topic = trim($_POST['topic'] ?? '');
     $numQuestions = intval($_POST['num_questions'] ?? 5);
     $difficulty = $_POST['difficulty'] ?? 'medium';
+    $category = $_POST['category'] ?? 'General';
 
     if (empty($topic)) {
         $error = 'Please enter a topic.';
     } elseif ($numQuestions < 1 || $numQuestions > MAX_QUESTIONS) {
         $error = 'Please enter a valid number of questions (1-' . MAX_QUESTIONS . ').';
     } else {
-        $result = createQuiz($topic, $numQuestions, $difficulty, $_SESSION['user_id']);
+        $result = createQuiz($topic, $numQuestions, $difficulty, $_SESSION['user_id'], $category);
 
         if ($result['success']) {
             $_SESSION['quiz_id'] = $result['quiz_id'];
@@ -81,6 +82,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <label for="topic" class="form-label">Topic</label>
                                 <input type="text" class="form-control" id="topic" name="topic" 
                                        placeholder="e.g., PHP Programming" value="<?php echo $_POST['topic'] ?? ''; ?>" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="category" class="form-label">Category</label>
+                                <select class="form-select" id="category" name="category">
+                                    <option value="General">General</option>
+                                    <option value="Programming">Programming</option>
+                                    <option value="Science">Science</option>
+                                    <option value="History">History</option>
+                                    <option value="Mathematics">Mathematics</option>
+                                    <option value="Language">Language</option>
+                                </select>
                             </div>
                             <div class="mb-3">
                                 <label for="num_questions" class="form-label">Number of Questions</label>
