@@ -85,7 +85,7 @@ Use this EXACT format:
     ];
 }
 
-function createQuiz($topic, $numQuestions = 5, $difficulty = 'medium', $userId = null) {
+function createQuiz($topic, $numQuestions = 5, $difficulty = 'medium', $userId = null, $category = 'General') {
     global $pdo;
 
     $result = generateQuizQuestions($topic, $numQuestions, $difficulty);
@@ -103,12 +103,12 @@ function createQuiz($topic, $numQuestions = 5, $difficulty = 'medium', $userId =
     }
 
     try {
-        // ✅ Insert into quizzes (matches your table)
-        $stmt = $pdo->prepare("INSERT INTO quizzes (user_id, topic, difficulty, total_questions) VALUES (?, ?, ?, ?)");
-        $stmt->execute([$userId, $topic, $difficulty, $numQuestions]);
+        // ✅ Insert quiz with category
+        $stmt = $pdo->prepare("INSERT INTO quizzes (user_id, topic, difficulty, total_questions, category) VALUES (?, ?, ?, ?, ?)");
+        $stmt->execute([$userId, $topic, $difficulty, $numQuestions, $category]);
         $quizId = $pdo->lastInsertId();
 
-        // ✅ Insert into questions (matches your table columns)
+        // Insert questions (matching your column names)
         $stmt = $pdo->prepare("INSERT INTO questions (quiz_id, question_text, option_a, option_b, option_c, option_d, correct_answer) VALUES (?, ?, ?, ?, ?, ?, ?)");
 
         foreach ($result['questions'] as $q) {
