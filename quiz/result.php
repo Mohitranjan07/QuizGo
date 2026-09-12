@@ -15,6 +15,7 @@ $results = $_SESSION['quiz_results'] ?? [];
 $score = $_SESSION['quiz_score'] ?? 0;
 $total = $_SESSION['quiz_total'] ?? 0;
 $percentage = $_SESSION['quiz_percentage'] ?? 0;
+$timeTaken = $_SESSION['quiz_time_taken'] ?? 0;
 
 if (empty($results)) {
     header('Location: create.php');
@@ -44,6 +45,7 @@ if (empty($results)) {
                         <div class="alert alert-<?php echo $percentage >= 60 ? 'success' : 'warning'; ?> text-center">
                             <h4>Score: <?php echo $score; ?> / <?php echo $total; ?></h4>
                             <h5>Percentage: <?php echo round($percentage, 1); ?>%</h5>
+                            <h5>Time Taken: <?php echo gmdate("i:s", $timeTaken); ?></h5>
                             <h5><?php 
                                 if ($percentage >= 80) echo '🎉 Excellent!';
                                 elseif ($percentage >= 60) echo '👍 Good job!';
@@ -67,9 +69,14 @@ if (empty($results)) {
                             </div>
                         <?php endforeach; ?>
 
-                        <a href="create.php" class="btn btn-success w-100">
-                            <i class="fas fa-plus"></i> Create Another Quiz
-                        </a>
+                        <div class="d-grid gap-2">
+                            <a href="create.php" class="btn btn-success">
+                                <i class="fas fa-plus"></i> Create Another Quiz
+                            </a>
+                            <a href="export_pdf.php" class="btn btn-secondary">
+                                <i class="fas fa-file-pdf"></i> Download PDF
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
