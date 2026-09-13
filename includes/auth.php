@@ -160,21 +160,18 @@ function getUserById($userId) {
 }
 
 /**
- * Require login - redirect to login page if not logged in
- * 
- * @param string $redirect Optional redirect URL after login
+ * Require login - works from any folder (root or subfolders)
  */
-function requireLogin($redirect = null) {
+function requireLogin() {
     if (!isLoggedIn()) {
-        $url = 'login.php';
-        if ($redirect) {
-            $url .= '?redirect=' . urlencode($redirect);
-        }
-        header('Location: ' . $url);
+        // Detect if we're in a subfolder (like quiz/)
+        $isInSubfolder = (basename(dirname($_SERVER['PHP_SELF'])) === 'quiz');
+        $path = $isInSubfolder ? '../login.php' : 'login.php';
+        
+        header('Location: ' . $path);
         exit();
     }
 }
-
 /**
  * Logout user - destroy session and redirect to login
  */
